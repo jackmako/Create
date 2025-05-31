@@ -7,6 +7,8 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 
+import com.simibubi.create.infrastructure.config.AllConfigs;
+
 import org.jetbrains.annotations.Nullable;
 
 import com.simibubi.create.AllBlocks;
@@ -76,7 +78,7 @@ public class PackagerBlockEntity extends SmartBlockEntity {
 	public PackagerItemHandler inventory;
 	private final LazyOptional<IItemHandler> invProvider;
 
-	public static final int CYCLE = 20;
+	public static final int CYCLE = AllConfigs.server().logistics.packagePackCycle.get();
 	public int animationTicks;
 	public boolean animationInward;
 
@@ -133,13 +135,13 @@ public class PackagerBlockEntity extends SmartBlockEntity {
 			if (!level.isClientSide() && !queuedExitingPackages.isEmpty() && heldBox.isEmpty()) {
 				BigItemStack entry = queuedExitingPackages.get(0);
 				heldBox = entry.stack.copy();
-				
+
 				entry.count--;
 				if (entry.count <= 0)
 					queuedExitingPackages.remove(0);
-				
+
 				animationInward = false;
-				animationTicks = CYCLE;
+				animationTicks = AllConfigs.server().logistics.packagePackCycle.get();;
 				notifyUpdate();
 			}
 
@@ -147,7 +149,7 @@ public class PackagerBlockEntity extends SmartBlockEntity {
 		}
 
 		if (level.isClientSide) {
-			if (animationTicks == CYCLE - (animationInward ? 5 : 1))
+			if (animationTicks == AllConfigs.server().logistics.packagePackCycle.get() - (animationInward ? 5 : 1))
 				AllSoundEvents.PACKAGER.playAt(level, worldPosition, 1, 1, true);
 			if (animationTicks == (animationInward ? 1 : 5))
 				level.playLocalSound(worldPosition, SoundEvents.IRON_TRAPDOOR_CLOSE, SoundSource.BLOCKS, 0.25f, 0.75f,
@@ -353,7 +355,7 @@ public class PackagerBlockEntity extends SmartBlockEntity {
 		if (unpacked && !simulate) {
 			previouslyUnwrapped = box;
 			animationInward = true;
-			animationTicks = CYCLE;
+			animationTicks = AllConfigs.server().logistics.packagePackCycle.get();
 			notifyUpdate();
 		}
 
@@ -494,7 +496,7 @@ public class PackagerBlockEntity extends SmartBlockEntity {
 
 		heldBox = createdBox;
 		animationInward = false;
-		animationTicks = CYCLE;
+		animationTicks = AllConfigs.server().logistics.packagePackCycle.get();
 
 		advancements.awardPlayer(AllAdvancements.PACKAGER);
 		triggerStockCheck();
@@ -593,15 +595,15 @@ public class PackagerBlockEntity extends SmartBlockEntity {
 
 	public float getTrayOffset(float partialTicks) {
 		float tickCycle = animationInward ? animationTicks - partialTicks : animationTicks - 5 - partialTicks;
-		float progress = Mth.clamp(tickCycle / (CYCLE - 5) * 2 - 1, -1, 1);
+		float progress = Mth.clamp(tickCycle / (AllConfigs.server().logistics.packagePackCycle.get() - 5) * 2 - 1, -1, 1);
 		progress = 1 - progress * progress;
 		return progress * progress;
 	}
 
 	public ItemStack getRenderedBox() {
 		if (animationInward)
-			return animationTicks <= CYCLE / 2 ? ItemStack.EMPTY : previouslyUnwrapped;
-		return animationTicks >= CYCLE / 2 ? ItemStack.EMPTY : heldBox;
+			return animationTicks <= AllConfigs.server().logistics.packagePackCycle.get() / 2 ? ItemStack.EMPTY : previouslyUnwrapped;
+		return animationTicks >= AllConfigs.server().logistics.packagePackCycle.get() / 2 ? ItemStack.EMPTY : heldBox;
 	}
 
 	public boolean isTargetingSameInventory(@Nullable IdentifiedInventory inventory) {
